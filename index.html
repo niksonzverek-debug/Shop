@@ -2,12 +2,50 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Мини‑магазин</title>
+    <title>Мини-магазин</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: sans-serif; padding: 16px; background: var(--tg-theme-bg-color); color: var(--tg-theme-text-color); }
-        .product { border: 1px solid var(--tg-theme-hint-color); border-radius: 8px; padding: 12px; margin-bottom: 12px; }
-        button { background: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color); border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
+        body { 
+            font-family: sans-serif; 
+            padding: 16px; 
+            background: var(--tg-theme-bg-color); 
+            color: var(--tg-theme-text-color); 
+            margin: 0;
+        }
+        .product { 
+            border: 1px solid var(--tg-theme-hint-color); 
+            border-radius: 12px; 
+            padding: 16px; 
+            margin-bottom: 16px; 
+            background: var(--tg-theme-secondary-bg-color);
+        }
+        .product img {https://api.telegram.org/file/bot8420129422:AAHSjd8sh7F9snGf8zzTNEr0Kre5GEcSVJU/AgACAgIAAxkBAAMJabgraYxLX_3Obf4vfRj5o34FxIgAAqcVaxsX_8BJGYqO8WcoDrwBAAMCAAN5AAM6BA'`
+            width: 100%;
+            max-height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+        .product h3 {
+            margin: 8px 0;
+            font-size: 18px;
+        }
+        .price {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--tg-theme-button-color);
+            margin: 8px 0;
+        }
+        button { 
+            background: var(--tg-theme-button-color); 
+            color: var(--tg-theme-button-text-color); 
+            border: none; 
+            padding: 12px 20px; 
+            border-radius: 8px; 
+            font-size: 16px;
+            width: 100%;
+            cursor: pointer; 
+        }
     </style>
 </head>
 <body>
@@ -17,25 +55,45 @@
     <script>
         const tg = window.Telegram.WebApp;
         tg.ready();
-        tg.expand(); // растягиваем на весь экран
+        tg.expand();
 
+        // Товары с фотографиями (ЗАМЕНИТЕ ССЫЛКИ НА СВОИ)
         const products = [
-            { id: 1, name: 'Футболка', price: 150000 },
-            { id: 2, name: 'Кепка', price: 80000 },
-            { id: 3, name: 'Кружка', price: 40000 }
+            { 
+                id: 1, 
+                name: 'Футболка', 
+                price: 150000,
+                image: 'https://via.placeholder.com/300x200?text=Футболка'  // замените на свою ссылку
+            },
+            { 
+                id: 2, 
+                name: 'Кепка', 
+                price: 80000,
+                image: 'https://via.placeholder.com/300x200?text=Кепка'     // замените на свою ссылку
+            },
+            { 
+                id: 3, 
+                name: 'Кружка', 
+                price: 40000,
+                image: 'https://via.placeholder.com/300x200?text=Кружка'    // замените на свою ссылку
+            }
         ];
 
         function renderProducts() {
             const container = document.getElementById('products');
             container.innerHTML = '';
+            
             products.forEach(p => {
                 const div = document.createElement('div');
                 div.className = 'product';
+                
                 div.innerHTML = `
+                    <img src="${p.image}" alt="${p.name}" onerror="this.src='https://via.placeholder.com/300x200?text=Фото+не+доступно'">
                     <strong>${p.name}</strong><br>
-                    Цена: ${p.price} сум<br>
+                    Цена: ${p.price.toLocaleString()} сум<br>
                     <button onclick="buy(${p.id})">Купить</button>
                 `;
+                
                 container.appendChild(div);
             });
         }
