@@ -432,50 +432,56 @@
             return { wrapper, input };
         }
 
-        function attachEnterToInput(inputElement, rowIndex, colIndex) {
-            const handler = (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (rowIndex + 1 < rowsData.length) {
-                        let nextRow = tbody.children[rowIndex + 1];
-                        if (nextRow && nextRow.cells[colIndex]) {
-                            let wrapper = nextRow.cells[colIndex].querySelector('.input-wrapper');
-                            if (wrapper) {
-                                let inp = wrapper.querySelector('input');
-                                if (inp) {
-                                    inp.focus();
-                                    inp.select();
-                                }
-                            }
-                        }
-                    } else {
-                        addRowAndFocus(colIndex);
-                    }
-                    return false;
-                }
-            };
-            inputElement.addEventListener('keydown', handler);
-            inputElement.addEventListener('keypress', handler);
-        }
-
-        function addRowAndFocus(colIndex) {
-            rowsData.push({ nonStd: 0, waste: 0, uncal: 0 });
-            renderTable();
-            saveAll();
-            setTimeout(() => {
-                let newRow = tbody.lastElementChild;
-                if (newRow && newRow.cells && newRow.cells[colIndex]) {
-                    let wrapper = newRow.cells[colIndex].querySelector('.input-wrapper');
+        // Глобальная функция перехода на строку ниже
+        function moveFocusDown(currentInput, rowIndex, colIndex) {
+            if (rowIndex + 1 < rowsData.length) {
+                let nextRow = tbody.children[rowIndex + 1];
+                if (nextRow && nextRow.cells[colIndex]) {
+                    let wrapper = nextRow.cells[colIndex].querySelector('.input-wrapper');
                     if (wrapper) {
                         let inp = wrapper.querySelector('input');
                         if (inp) {
                             inp.focus();
                             inp.select();
+                            return true;
                         }
                     }
                 }
-            }, 20);
+            } else {
+                // последняя строка: добавить новую
+                rowsData.push({ nonStd: 0, waste: 0, uncal: 0 });
+                renderTable();
+                saveAll();
+                setTimeout(() => {
+                    let newRow = tbody.lastElementChild;
+                    if (newRow && newRow.cells[colIndex]) {
+                        let wrapper = newRow.cells[colIndex].querySelector('.input-wrapper');
+                        if (wrapper) {
+                            let inp = wrapper.querySelector('input');
+                            if (inp) {
+                                inp.focus();
+                                inp.select();
+                            }
+                        }
+                    }
+                }, 20);
+                return true;
+            }
+            return false;
+        }
+
+        function attachEnterToInput(inputElement, rowIndex, colIndex) {
+            const handler = (e) => {
+                if (e.key === 'Enter' || e.keyCode === 13) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    moveFocusDown(inputElement, rowIndex, colIndex);
+                    return false;
+                }
+            };
+            inputElement.addEventListener('keydown', handler);
+            inputElement.addEventListener('keypress', handler);
         }
 
         function renderTable() {
