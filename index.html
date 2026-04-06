@@ -1,112 +1,665 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <meta charset="utf-8">
-    <title>Мини-магазин</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="theme-color" content="#f97316">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Калькулятор приёмки">
+    <title>Калькулятор: Нестандарт / Отходы / Некалибр</title>
+    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22Калькулятор%20приёмки%22,%22short_name%22:%22Калькулятор%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%23fef6e0%22,%22theme_color%22:%22%23f97316%22,%22icons%22:[{%22src%22:%22data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Crect%20width='100'%20height='100'%20fill='%23f97316'/%3E%3Ctext%20x='50'%20y='68'%20font-size='52'%20text-anchor='middle'%20fill='white'%20font-weight='bold'%3E📊%3C/text%3E%3C/svg%3E%22,%22sizes%22:%22any%22,%22type%22:%22image/svg+xml%22}]}">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f97316'/%3E%3Ctext x='50' y='68' font-size='52' text-anchor='middle' fill='white' font-weight='bold'%3E📊%3C/text%3E%3C/svg%3E">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f97316'/%3E%3Ctext x='50' y='68' font-size='52' text-anchor='middle' fill='white' font-weight='bold'%3E📊%3C/text%3E%3C/svg%3E">
     <style>
-        body { 
-            font-family: sans-serif; 
-            padding: 16px; 
-            background: var(--tg-theme-bg-color); 
-            color: var(--tg-theme-text-color); 
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        }
+        body {
+            background: #eef2f5;
             margin: 0;
+            padding: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
         }
-        .product { 
-            border: 1px solid var(--tg-theme-hint-color); 
-            border-radius: 12px; 
-            padding: 16px; 
-            margin-bottom: 16px; 
-            background: var(--tg-theme-secondary-bg-color);
-        }
-        .product img {
+        .app {
+            max-width: 1200px;
             width: 100%;
-            max-height: 200px;
-            object-fit: cover;
-            border-radius: 8px;
-            margin-bottom: 12px;
+            background: white;
+            border-radius: 28px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            padding: 16px 18px 22px;
         }
-        .product h3 {
-            margin: 8px 0;
-            font-size: 18px;
+        .params-grid {
+            background: #fef6e0;
+            border-radius: 20px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: flex-end;
         }
-        .price {
-            font-size: 20px;
-            font-weight: bold;
-            color: var(--tg-theme-button-color);
-            margin: 8px 0;
+        .param {
+            flex: 1;
+            min-width: 110px;
         }
-        button { 
-            background: var(--tg-theme-button-color); 
-            color: var(--tg-theme-button-text-color); 
-            border: none; 
-            padding: 12px 20px; 
-            border-radius: 8px; 
+        .param label {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #b45a1c;
+            margin-bottom: 3px;
+        }
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .input-wrapper input {
+            width: 100%;
+            padding: 8px 28px 8px 10px;
+            font-size: 0.9rem;
+            border: 1px solid #fcd9a7;
+            border-radius: 40px;
+            background: white;
+            transition: 0.1s;
+            font-weight: 500;
+        }
+        .input-wrapper input:focus {
+            outline: none;
+            border-color: #f97316;
+            box-shadow: 0 0 0 2px rgba(249,115,22,0.2);
+        }
+        .clear-icon {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-size: 16px;
+            font-weight: bold;
+            color: #b45a1c;
+            cursor: pointer;
+            background: #fff0dd;
+            border-radius: 50%;
+            line-height: 1;
+        }
+        .result-box {
+            background: #fff1e0;
+            border-radius: 16px;
+            padding: 6px 12px;
+            text-align: center;
+            min-width: 100px;
+        }
+        .result-box .label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: #9a4d1a;
+        }
+        .result-box .value {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #c2410c;
+            line-height: 1.2;
+        }
+        .unit-switch {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: white;
+            padding: 4px 12px;
+            border-radius: 40px;
+            border: 1px solid #fcd9a7;
+        }
+        .unit-switch span {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #b45a1c;
+        }
+        .unit-switch label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.7rem;
+        }
+        .table-wrap {
+            overflow-x: auto;
+            margin-bottom: 16px;
+            border-radius: 20px;
+            border: 1px solid #ffe6cc;
+        }
+        .data-table {
             width: 100%;
-            cursor: pointer; 
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            min-width: 500px;
+        }
+        .data-table th {
+            background: #fef3ce;
+            padding: 10px 8px;
+            font-weight: 700;
+            color: #7c2d12;
+            border-bottom: 1px solid #ffe0b5;
+            font-size: 0.85rem;
+        }
+        .data-table td {
+            padding: 8px 6px;
+            border-bottom: 1px solid #fff0e0;
+            vertical-align: middle;
+        }
+        .data-table .input-wrapper {
+            width: 100%;
+        }
+        .data-table .input-wrapper input {
+            padding: 6px 28px 6px 10px;
+            font-size: 0.85rem;
+        }
+        .delete-row-btn {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: #d97706;
+            padding: 4px 8px;
+            border-radius: 30px;
+            font-weight: bold;
+        }
+        .totals-row td {
+            background: #fff7e8;
+            padding: 10px 8px;
+        }
+        .total-block {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .total-sum {
+            font-weight: 800;
+            font-size: 0.9rem;
+            color: #9a3412;
+        }
+        .total-percent {
+            font-size: 0.7rem;
+            background: #ffedd5;
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 40px;
+            color: #b45309;
+            width: fit-content;
+        }
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 12px;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .btn {
+            padding: 8px 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-radius: 60px;
+            border: none;
+            cursor: pointer;
+            background: #f1f5f9;
+            transition: 0.1s;
+        }
+        .btn-primary {
+            background: #f97316;
+            color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .btn-danger {
+            background: #fff1f0;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
+        }
+        .add-row-btn {
+            background: #fef3c7;
+            border: 1px dashed #f97316;
+            padding: 6px 16px;
+            font-size: 0.8rem;
+        }
+        .footer-note {
+            text-align: center;
+            font-size: 0.65rem;
+            color: #94a3b8;
+            margin-top: 16px;
+        }
+        @media (max-width: 700px) {
+            .app { padding: 12px; }
+            .params-grid { flex-direction: column; align-items: stretch; }
+            .btn { padding: 6px 14px; }
         }
     </style>
 </head>
 <body>
-    <h1>Наши товары</h1>
-    <div id="products"></div>
+<div class="app">
+    <div class="params-grid">
+        <div class="param">
+            <label>📦 Паллет (шт)</label>
+            <div class="input-wrapper">
+                <input type="text" inputmode="decimal" id="palletCount" value="0">
+                <span class="clear-icon">✕</span>
+            </div>
+        </div>
+        <div class="param">
+            <label>📦 Штук / паллета</label>
+            <div class="input-wrapper">
+                <input type="text" inputmode="decimal" id="pcsPerPallet" value="0">
+                <span class="clear-icon">✕</span>
+            </div>
+        </div>
+        <div class="result-box">
+            <div class="label">📊 Всего штук</div>
+            <div class="value" id="totalPcsDisplay">0</div>
+        </div>
+        <div class="param">
+            <label>📦 Взяли (упаковок)</label>
+            <div class="input-wrapper">
+                <input type="text" inputmode="decimal" id="packageCount" value="10">
+                <span class="clear-icon">✕</span>
+            </div>
+        </div>
+        <div class="param">
+            <label>⚖️ Кг / упаковка</label>
+            <div class="input-wrapper">
+                <input type="text" inputmode="decimal" id="weightPerUnit" value="15">
+                <span class="clear-icon">✕</span>
+            </div>
+        </div>
+        <div class="result-box">
+            <div class="label">⚖️ Общий вес</div>
+            <div class="value" id="totalWeightDisplay">0.00 кг</div>
+        </div>
+    </div>
 
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
+        <div class="unit-switch">
+            <span>📏 Единицы ввода:</span>
+            <label><input type="radio" name="unit" value="kg" checked> кг</label>
+            <label><input type="radio" name="unit" value="g"> г</label>
+        </div>
+    </div>
 
-        // Товары с фотографиями (ЗАМЕНИТЕ ССЫЛКИ НА СВОИ)
-        const products = [
-            { 
-                id: 1, 
-                name: 'Футболка', 
-                price: 150000,
-                image: 'https://via.placeholder.com/300x200?text=Футболка'  // замените на свою ссылку
-            },
-            { 
-                id: 2, 
-                name: 'Кепка', 
-                price: 80000,
-                image: 'https://api.telegram.org/file/bot8420129422:AAHSjd8sh7F9snGf8zzTNEr0Kre5GEcSVJU/AgACAgIAAxkBAAMJabgraYxLX_3Obf4vfRj5o34FxIgAAqcVaxsX_8BJGYqO8WcoDrwBAAMCAAN5AAM6BA'`    // замените на свою ссылку
-            },
-            { 
-                id: 3, 
-                name: 'Кружка', 
-                price: 40000,
-                image: 'https://via.placeholder.com/300x200?text=Кружка'    // замените на свою ссылку
-            }
-        ];
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead><tr><th>⚠️ Нестандарт (кг)</th><th>🗑️ Отходы (кг)</th><th>📉 Некалибр (кг)</th><th style="width:40px"></th></tr></thead>
+            <tbody id="tableBody"></tbody>
+            <tfoot id="tableFooter"></tfoot>
+        </table>
+    </div>
 
-        function renderProducts() {
-            const container = document.getElementById('products');
-            container.innerHTML = '';
-            
-            products.forEach(p => {
-                const div = document.createElement('div');
-                div.className = 'product';
-                
-                div.innerHTML = `
-                    <img src="${p.image}" alt="${p.name}" onerror="this.src='https://via.placeholder.com/300x200?text=Фото+не+доступно'">
-                    <strong>${p.name}</strong><br>
-                    Цена: ${p.price.toLocaleString()} сум<br>
-                    <button onclick="buy(${p.id})">Купить</button>
-                `;
-                
-                container.appendChild(div);
-            });
-        }
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+        <button class="btn add-row-btn" id="addRowBtn">➕ Добавить строку</button>
+    </div>
 
-        window.buy = function(productId) {
-            const product = products.find(p => p.id === productId);
-            tg.sendData(JSON.stringify({
-                action: 'buy',
-                product: product
-            }));
+    <div class="action-buttons">
+        <button class="btn btn-primary" id="completeBtn">✅ Завершить приёмку</button>
+        <button class="btn btn-danger" id="resetBtn">🔄 Обнулить всё</button>
+    </div>
+    <div class="footer-note">
+        * Enter → переход на следующую строку (вниз). Если строка последняя — добавится новая.<br>
+        * При выборе «г» введённые числа переводятся в кг (деление на 1000).
+    </div>
+</div>
+
+<script>
+    (function(){
+        const tbody = document.getElementById('tableBody');
+        const tfoot = document.getElementById('tableFooter');
+        const addRowBtn = document.getElementById('addRowBtn');
+        const completeBtn = document.getElementById('completeBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const palletCountInput = document.getElementById('palletCount');
+        const pcsPerPalletInput = document.getElementById('pcsPerPallet');
+        const totalPcsSpan = document.getElementById('totalPcsDisplay');
+        const packageCountInput = document.getElementById('packageCount');
+        const weightPerUnitInput = document.getElementById('weightPerUnit');
+        const totalWeightSpan = document.getElementById('totalWeightDisplay');
+        const unitRadios = document.querySelectorAll('input[name="unit"]');
+        
+        let currentUnit = 'kg';
+        let rowsData = [];
+
+        const STORAGE = {
+            palletCount: 'compact_palletCount',
+            pcsPerPallet: 'compact_pcsPerPallet',
+            packageCount: 'compact_packageCount',
+            weightPerUnit: 'compact_weightPerUnit',
+            rowsData: 'compact_rowsData',
+            unit: 'compact_unit'
         };
 
-        renderProducts();
-    </script>
+        function parseNum(val) {
+            let n = parseFloat(val);
+            return isNaN(n) ? 0 : n;
+        }
+
+        function kgToDisplay(kg) {
+            if (currentUnit === 'g') return (kg * 1000).toFixed(0);
+            return kg.toFixed(3);
+        }
+        function displayToKg(value) {
+            let num = parseNum(value);
+            if (currentUnit === 'g') return num / 1000;
+            return num;
+        }
+
+        function getTotalWeight() {
+            return parseNum(packageCountInput.value) * parseNum(weightPerUnitInput.value);
+        }
+        function updateTotalWeightDisplay() {
+            totalWeightSpan.innerText = getTotalWeight().toFixed(2) + ' кг';
+        }
+        function updateTotalPcs() {
+            let total = parseNum(palletCountInput.value) * parseNum(pcsPerPalletInput.value);
+            totalPcsSpan.innerText = total;
+            return total;
+        }
+        function calculateTotals() {
+            let sumNon = 0, sumWaste = 0, sumUncal = 0;
+            for (let r of rowsData) {
+                sumNon += parseNum(r.nonStd);
+                sumWaste += parseNum(r.waste);
+                sumUncal += parseNum(r.uncal);
+            }
+            return { sumNon, sumWaste, sumUncal };
+        }
+        function getPercentages(totalWeight, sumNon, sumWaste, sumUncal) {
+            if (totalWeight === 0) return { pNon:0, pWaste:0, pUncal:0 };
+            return {
+                pNon: (sumNon / totalWeight) * 100,
+                pWaste: (sumWaste / totalWeight) * 100,
+                pUncal: (sumUncal / totalWeight) * 100
+            };
+        }
+        function updateFooter() {
+            let totalW = getTotalWeight();
+            let { sumNon, sumWaste, sumUncal } = calculateTotals();
+            let perc = getPercentages(totalW, sumNon, sumWaste, sumUncal);
+            tfoot.innerHTML = '';
+            let row = document.createElement('tr');
+            row.classList.add('totals-row');
+            let td1 = document.createElement('td');
+            td1.innerHTML = `<div class="total-block"><div class="total-sum">📦 ИТОГ: ${sumNon.toFixed(2)} кг</div><div class="total-percent">${perc.pNon.toFixed(1)}%</div></div>`;
+            let td2 = document.createElement('td');
+            td2.innerHTML = `<div class="total-block"><div class="total-sum">🗑️ ИТОГ: ${sumWaste.toFixed(2)} кг</div><div class="total-percent">${perc.pWaste.toFixed(1)}%</div></div>`;
+            let td3 = document.createElement('td');
+            td3.innerHTML = `<div class="total-block"><div class="total-sum">⚠️ ИТОГ: ${sumUncal.toFixed(2)} кг</div><div class="total-percent">${perc.pUncal.toFixed(1)}%</div></div>`;
+            let td4 = document.createElement('td');
+            row.append(td1, td2, td3, td4);
+            tfoot.appendChild(row);
+        }
+
+        function makeInputWithClear(valueKg, onInputCallback) {
+            let wrapper = document.createElement('div');
+            wrapper.className = 'input-wrapper';
+            let input = document.createElement('input');
+            input.type = 'text';
+            input.inputMode = 'decimal';
+            input.value = kgToDisplay(valueKg);
+            input.addEventListener('focus', (e) => e.target.select());
+            input.addEventListener('input', (e) => {
+                let raw = e.target.value;
+                if (raw === '') raw = '0';
+                let num = parseFloat(raw);
+                if (isNaN(num)) num = 0;
+                let kgValue = displayToKg(num);
+                input.value = kgToDisplay(kgValue);
+                if (onInputCallback) onInputCallback(kgValue);
+            });
+            let clearSpan = document.createElement('span');
+            clearSpan.className = 'clear-icon';
+            clearSpan.innerText = '✕';
+            clearSpan.addEventListener('click', (e) => {
+                e.stopPropagation();
+                input.value = kgToDisplay(0);
+                if (onInputCallback) onInputCallback(0);
+                input.focus();
+            });
+            wrapper.appendChild(input);
+            wrapper.appendChild(clearSpan);
+            return { wrapper, input };
+        }
+
+        function attachEnterToInput(inputElement, rowIndex, colIndex) {
+            const handler = (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (rowIndex + 1 < rowsData.length) {
+                        let nextRow = tbody.children[rowIndex + 1];
+                        if (nextRow && nextRow.cells[colIndex]) {
+                            let wrapper = nextRow.cells[colIndex].querySelector('.input-wrapper');
+                            if (wrapper) {
+                                let inp = wrapper.querySelector('input');
+                                if (inp) {
+                                    inp.focus();
+                                    inp.select();
+                                }
+                            }
+                        }
+                    } else {
+                        addRowAndFocus(colIndex);
+                    }
+                    return false;
+                }
+            };
+            inputElement.addEventListener('keydown', handler);
+            inputElement.addEventListener('keypress', handler);
+        }
+
+        function addRowAndFocus(colIndex) {
+            rowsData.push({ nonStd: 0, waste: 0, uncal: 0 });
+            renderTable();
+            saveAll();
+            setTimeout(() => {
+                let newRow = tbody.lastElementChild;
+                if (newRow && newRow.cells && newRow.cells[colIndex]) {
+                    let wrapper = newRow.cells[colIndex].querySelector('.input-wrapper');
+                    if (wrapper) {
+                        let inp = wrapper.querySelector('input');
+                        if (inp) {
+                            inp.focus();
+                            inp.select();
+                        }
+                    }
+                }
+            }, 20);
+        }
+
+        function renderTable() {
+            tbody.innerHTML = '';
+            for (let i = 0; i < rowsData.length; i++) {
+                let row = rowsData[i];
+                let tr = document.createElement('tr');
+                const cols = ['nonStd', 'waste', 'uncal'];
+                for (let c = 0; c < cols.length; c++) {
+                    let td = document.createElement('td');
+                    let field = cols[c];
+                    let valKg = row[field];
+                    let { wrapper, input } = makeInputWithClear(valKg, (newKg) => {
+                        rowsData[i][field] = newKg;
+                        updateFooter();
+                        saveAll();
+                    });
+                    td.appendChild(wrapper);
+                    tr.appendChild(td);
+                    attachEnterToInput(input, i, c);
+                }
+                let tdDel = document.createElement('td');
+                let delBtn = document.createElement('button');
+                delBtn.innerText = '✖';
+                delBtn.className = 'delete-row-btn';
+                delBtn.addEventListener('click', () => {
+                    if (rowsData.length === 1) {
+                        alert('Нельзя удалить последнюю строку. Добавьте новую.');
+                        return;
+                    }
+                    rowsData.splice(i, 1);
+                    renderTable();
+                    updateFooter();
+                    saveAll();
+                });
+                tdDel.appendChild(delBtn);
+                tr.appendChild(tdDel);
+                tbody.appendChild(tr);
+            }
+            updateFooter();
+        }
+
+        function addRow() {
+            rowsData.push({ nonStd: 0, waste: 0, uncal: 0 });
+            renderTable();
+            saveAll();
+        }
+
+        function saveAll() {
+            localStorage.setItem(STORAGE.palletCount, palletCountInput.value);
+            localStorage.setItem(STORAGE.pcsPerPallet, pcsPerPalletInput.value);
+            localStorage.setItem(STORAGE.packageCount, packageCountInput.value);
+            localStorage.setItem(STORAGE.weightPerUnit, weightPerUnitInput.value);
+            localStorage.setItem(STORAGE.rowsData, JSON.stringify(rowsData));
+            localStorage.setItem(STORAGE.unit, currentUnit);
+        }
+
+        function loadAll() {
+            let pCount = localStorage.getItem(STORAGE.palletCount);
+            if (pCount !== null) palletCountInput.value = pCount;
+            let pcs = localStorage.getItem(STORAGE.pcsPerPallet);
+            if (pcs !== null) pcsPerPalletInput.value = pcs;
+            let pack = localStorage.getItem(STORAGE.packageCount);
+            if (pack !== null) packageCountInput.value = pack;
+            let kg = localStorage.getItem(STORAGE.weightPerUnit);
+            if (kg !== null) weightPerUnitInput.value = kg;
+            let savedRows = localStorage.getItem(STORAGE.rowsData);
+            if (savedRows) {
+                try {
+                    let parsed = JSON.parse(savedRows);
+                    if (Array.isArray(parsed) && parsed.length) {
+                        rowsData = parsed;
+                    } else throw new Error();
+                } catch(e) {
+                    rowsData = [];
+                    for (let i = 0; i < 3; i++) rowsData.push({ nonStd: 0, waste: 0, uncal: 0 });
+                }
+            } else {
+                rowsData = [];
+                for (let i = 0; i < 3; i++) rowsData.push({ nonStd: 0, waste: 0, uncal: 0 });
+            }
+            let savedUnit = localStorage.getItem(STORAGE.unit);
+            if (savedUnit === 'g') {
+                currentUnit = 'g';
+                document.querySelector('input[name="unit"][value="g"]').checked = true;
+            } else {
+                currentUnit = 'kg';
+                document.querySelector('input[name="unit"][value="kg"]').checked = true;
+            }
+        }
+
+        function resetAll() {
+            if (confirm('⚠️ Сбросить все данные? Параметры и таблица вернутся к значениям по умолчанию.')) {
+                palletCountInput.value = '0';
+                pcsPerPalletInput.value = '0';
+                packageCountInput.value = '10';
+                weightPerUnitInput.value = '15';
+                rowsData = [];
+                for (let i = 0; i < 3; i++) rowsData.push({ nonStd: 0, waste: 0, uncal: 0 });
+                renderTable();
+                updateTotalPcs();
+                updateTotalWeightDisplay();
+                updateFooter();
+                saveAll();
+            }
+        }
+
+        function completeReceipt() {
+            let totalW = getTotalWeight();
+            let { sumNon, sumWaste, sumUncal } = calculateTotals();
+            let perc = getPercentages(totalW, sumNon, sumWaste, sumUncal);
+            let pal = parseNum(palletCountInput.value);
+            let pcsPal = parseNum(pcsPerPalletInput.value);
+            let totalPcs = pal * pcsPal;
+            let packs = parseNum(packageCountInput.value);
+            let kgPack = parseNum(weightPerUnitInput.value);
+            let msg = `📋 ОТЧЁТ\n━━━━━━━━━━━━━━━━━━━━\n`;
+            msg += `📦 Паллет: ${pal} шт × ${pcsPal} шт/пал = ${totalPcs} шт\n`;
+            msg += `📦 Взято: ${packs} уп. × ${kgPack} кг = ${totalW.toFixed(2)} кг\n`;
+            msg += `━━━━━━━━━━━━━━━━━━━━\n`;
+            msg += `⚠️ Нестандарт: ${sumNon.toFixed(2)} кг  (${perc.pNon.toFixed(1)}%)\n`;
+            msg += `🗑️ Отходы:     ${sumWaste.toFixed(2)} кг  (${perc.pWaste.toFixed(1)}%)\n`;
+            msg += `📉 Некалибр:   ${sumUncal.toFixed(2)} кг  (${perc.pUncal.toFixed(1)}%)\n`;
+            msg += `━━━━━━━━━━━━━━━━━━━━\n`;
+            msg += `📊 Сумма: ${(sumNon+sumWaste+sumUncal).toFixed(2)} кг\n`;
+            alert(msg);
+        }
+
+        function attachTopFieldHandlers() {
+            const topConfig = [
+                { el: palletCountInput, onChange: () => { updateTotalPcs(); saveAll(); } },
+                { el: pcsPerPalletInput, onChange: () => { updateTotalPcs(); saveAll(); } },
+                { el: packageCountInput, onChange: () => { updateTotalWeightDisplay(); updateFooter(); saveAll(); } },
+                { el: weightPerUnitInput, onChange: () => { updateTotalWeightDisplay(); updateFooter(); saveAll(); } }
+            ];
+            for (let cfg of topConfig) {
+                let inp = cfg.el;
+                inp.addEventListener('focus', (e) => e.target.select());
+                inp.addEventListener('input', () => {
+                    let v = inp.value;
+                    if (v === '') v = '0';
+                    let num = parseFloat(v);
+                    if (isNaN(num)) num = 0;
+                    inp.value = num;
+                    if (cfg.onChange) cfg.onChange();
+                });
+                let wrapper = inp.closest('.input-wrapper');
+                if (wrapper) {
+                    let clearSpan = wrapper.querySelector('.clear-icon');
+                    if (clearSpan) {
+                        clearSpan.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            inp.value = '0';
+                            if (cfg.onChange) cfg.onChange();
+                            inp.focus();
+                        });
+                    }
+                }
+            }
+        }
+
+        function onUnitChange() {
+            let newUnit = document.querySelector('input[name="unit"]:checked').value;
+            if (newUnit === currentUnit) return;
+            currentUnit = newUnit;
+            renderTable();
+            saveAll();
+        }
+
+        function init() {
+            loadAll();
+            renderTable();
+            updateTotalPcs();
+            updateTotalWeightDisplay();
+            updateFooter();
+            attachTopFieldHandlers();
+            addRowBtn.addEventListener('click', () => addRow());
+            completeBtn.addEventListener('click', completeReceipt);
+            resetBtn.addEventListener('click', resetAll);
+            unitRadios.forEach(radio => radio.addEventListener('change', onUnitChange));
+            window.addEventListener('beforeunload', () => saveAll());
+        }
+        init();
+    })();
+</script>
 </body>
 </html>
