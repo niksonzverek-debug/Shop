@@ -292,7 +292,7 @@
     </div>
 
     <div class="table-wrap">
-        <table class="data-table">
+        <table class="data-table" id="mainTable">
             <thead><tr><th>⚠️ Нестандарт (кг)</th><th>🗑️ Отходы (кг)</th><th>📉 Некалибр (кг)</th><th style="width:40px"></th></tr></thead>
             <tbody id="tableBody"></tbody>
             <tfoot id="tableFooter"></tfoot>
@@ -308,7 +308,7 @@
         <button class="btn btn-danger" id="resetBtn">🔄 Обнулить всё</button>
     </div>
     <div class="footer-note">
-        * Enter → переход на следующую строку (вниз). Если строка последняя — добавится новая.<br>
+        * Enter → переход на следующую строку (вниз) в том же столбце. Если строка последняя — добавится новая.<br>
         * При выборе «г» введённые числа переводятся в кг (деление на 1000).
     </div>
 </div>
@@ -407,6 +407,7 @@
             let input = document.createElement('input');
             input.type = 'text';
             input.inputMode = 'decimal';
+            input.enterkeyhint = 'next';  // подсказка мобильной клавиатуре
             input.value = kgToDisplay(valueKg);
             input.addEventListener('focus', (e) => e.target.select());
             input.addEventListener('input', (e) => {
@@ -432,10 +433,10 @@
             return { wrapper, input };
         }
 
-        // Глобальная функция перехода на строку ниже
-        function moveFocusDown(currentInput, rowIndex, colIndex) {
-            if (rowIndex + 1 < rowsData.length) {
-                let nextRow = tbody.children[rowIndex + 1];
+        // Функция перехода на следующую строку в том же столбце
+        function moveFocusDown(currentRowIndex, colIndex) {
+            if (currentRowIndex + 1 < rowsData.length) {
+                let nextRow = tbody.children[currentRowIndex + 1];
                 if (nextRow && nextRow.cells[colIndex]) {
                     let wrapper = nextRow.cells[colIndex].querySelector('.input-wrapper');
                     if (wrapper) {
@@ -448,7 +449,7 @@
                     }
                 }
             } else {
-                // последняя строка: добавить новую
+                // Добавляем новую строку и фокусируемся в ней
                 rowsData.push({ nonStd: 0, waste: 0, uncal: 0 });
                 renderTable();
                 saveAll();
@@ -470,18 +471,27 @@
             return false;
         }
 
-        function attachEnterToInput(inputElement, rowIndex, colIndex) {
-            const handler = (e) => {
+        // Глобальный обработчик Enter на всю таблицу (делегирование)
+        function setupGlobalEnterHandler() {
+            document.getElementById('mainTable').addEventListener('keydown', function(e) {
                 if (e.key === 'Enter' || e.keyCode === 13) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    e.stopImmediatePropagation();
-                    moveFocusDown(inputElement, rowIndex, colIndex);
-                    return false;
+                    let target = e.target;
+                    if (target && target.tagName === 'INPUT') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        // Находим строку и столбец, в которых находится этот input
+                        let td = target.closest('td');
+                        if (!td) return;
+                        let tr = td.closest('tr');
+                        if (!tr) return;
+                        let rowIndex = Array.from(tbody.children).indexOf(tr);
+                        if (rowIndex === -1) return;
+                        let colIndex = Array.from(tr.cells).indexOf(td);
+                        if (colIndex === -1 || colIndex > 2) return; // только первые три столбца
+                        moveFocusDown(rowIndex, colIndex);
+                    }
                 }
-            };
-            inputElement.addEventListener('keydown', handler);
-            inputElement.addEventListener('keypress', handler);
+            });
         }
 
         function renderTable() {
@@ -501,7 +511,6 @@
                     });
                     td.appendChild(wrapper);
                     tr.appendChild(td);
-                    attachEnterToInput(input, i, c);
                 }
                 let tdDel = document.createElement('td');
                 let delBtn = document.createElement('button');
@@ -658,6 +667,7 @@
             updateTotalWeightDisplay();
             updateFooter();
             attachTopFieldHandlers();
+            setupGlobalEnterHandler(); // глобальный перехват Enter на таблице
             addRowBtn.addEventListener('click', () => addRow());
             completeBtn.addEventListener('click', completeReceipt);
             resetBtn.addEventListener('click', resetAll);
