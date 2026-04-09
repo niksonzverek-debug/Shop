@@ -12,247 +12,43 @@
     <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f97316'/%3E%3Ctext x='50' y='68' font-size='52' text-anchor='middle' fill='white' font-weight='bold'%3E📊%3C/text%3E%3C/svg%3E">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f97316'/%3E%3Ctext x='50' y='68' font-size='52' text-anchor='middle' fill='white' font-weight='bold'%3E📊%3C/text%3E%3C/svg%3E">
     <style>
-        * {
-            box-sizing: border-box;
-            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-        }
-        body {
-            background: #eef2f5;
-            margin: 0;
-            padding: 12px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-        .app {
-            max-width: 1200px;
-            width: 100%;
-            background: white;
-            border-radius: 28px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-            padding: 16px 18px 22px;
-        }
-        .params-grid {
-            background: #fef6e0;
-            border-radius: 20px;
-            padding: 12px 16px;
-            margin-bottom: 20px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            align-items: flex-end;
-        }
-        .param {
-            flex: 1;
-            min-width: 110px;
-        }
-        .param label {
-            display: block;
-            font-size: 0.7rem;
-            font-weight: 600;
-            color: #b45a1c;
-            margin-bottom: 3px;
-        }
-        .input-wrapper {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-        .input-wrapper input {
-            width: 100%;
-            padding: 8px 28px 8px 10px;
-            font-size: 0.9rem;
-            border: 1px solid #fcd9a7;
-            border-radius: 40px;
-            background: white;
-            transition: 0.1s;
-            font-weight: 500;
-        }
-        .input-wrapper input:focus {
-            outline: none;
-            border-color: #f97316;
-            box-shadow: 0 0 0 2px rgba(249,115,22,0.2);
-        }
-        .clear-icon {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 18px;
-            height: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            font-weight: bold;
-            color: #b45a1c;
-            cursor: pointer;
-            background: #fff0dd;
-            border-radius: 50%;
-            line-height: 1;
-        }
-        .result-box {
-            background: #fff1e0;
-            border-radius: 16px;
-            padding: 6px 12px;
-            text-align: center;
-            min-width: 100px;
-        }
-        .result-box .label {
-            font-size: 0.65rem;
-            font-weight: 600;
-            color: #9a4d1a;
-        }
-        .result-box .value {
-            font-size: 1.1rem;
-            font-weight: 800;
-            color: #c2410c;
-            line-height: 1.2;
-        }
-        .unit-switch {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: white;
-            padding: 4px 12px;
-            border-radius: 40px;
-            border: 1px solid #fcd9a7;
-        }
-        .unit-switch span {
-            font-size: 0.7rem;
-            font-weight: 600;
-            color: #b45a1c;
-        }
-        .unit-switch label {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 0.7rem;
-        }
-        .param-with-unit {
-            display: flex;
-            gap: 6px;
-            align-items: flex-end;
-        }
-        .param-with-unit .param {
-            flex: 2;
-        }
-        .param-with-unit .unit-switch {
-            margin-bottom: 6px;
-            padding: 4px 8px;
-        }
-        .table-wrap {
-            overflow-x: auto;
-            margin-bottom: 16px;
-            border-radius: 20px;
-            border: 1px solid #ffe6cc;
-        }
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.85rem;
-            min-width: 500px;
-        }
-        .data-table th {
-            background: #fef3ce;
-            padding: 10px 8px;
-            font-weight: 700;
-            color: #7c2d12;
-            border-bottom: 1px solid #ffe0b5;
-            font-size: 0.85rem;
-        }
-        .data-table td {
-            padding: 8px 6px;
-            border-bottom: 1px solid #fff0e0;
-            vertical-align: middle;
-        }
-        .data-table .input-wrapper {
-            width: 100%;
-        }
-        .data-table .input-wrapper input {
-            padding: 6px 28px 6px 10px;
-            font-size: 0.85rem;
-        }
-        .delete-row-btn {
-            background: none;
-            border: none;
-            font-size: 1.2rem;
-            cursor: pointer;
-            color: #d97706;
-            padding: 4px 8px;
-            border-radius: 30px;
-            font-weight: bold;
-        }
-        .totals-row td {
-            background: #fff7e8;
-            padding: 10px 8px;
-        }
-        .total-block {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-        .total-sum {
-            font-weight: 800;
-            font-size: 0.9rem;
-            color: #9a3412;
-        }
-        .total-percent {
-            font-size: 0.7rem;
-            background: #ffedd5;
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 40px;
-            color: #b45309;
-            width: fit-content;
-        }
-        .action-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-top: 12px;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .btn {
-            padding: 8px 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            border-radius: 60px;
-            border: none;
-            cursor: pointer;
-            background: #f1f5f9;
-            transition: 0.1s;
-        }
-        .btn-primary {
-            background: #f97316;
-            color: white;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        .btn-danger {
-            background: #fff1f0;
-            color: #b91c1c;
-            border: 1px solid #fecaca;
-        }
-        .add-row-btn {
-            background: #fef3c7;
-            border: 1px dashed #f97316;
-            padding: 6px 16px;
-            font-size: 0.8rem;
-        }
-        .footer-note {
-            text-align: center;
-            font-size: 0.65rem;
-            color: #94a3b8;
-            margin-top: 16px;
-        }
-        @media (max-width: 700px) {
-            .app { padding: 12px; }
-            .params-grid { flex-direction: column; align-items: stretch; }
-            .param-with-unit { flex-wrap: wrap; }
-            .btn { padding: 6px 14px; }
-        }
+        * { box-sizing: border-box; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
+        body { background: #eef2f5; margin: 0; padding: 12px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .app { max-width: 1200px; width: 100%; background: white; border-radius: 28px; box-shadow: 0 8px 20px rgba(0,0,0,0.08); padding: 16px 18px 22px; }
+        .params-grid { background: #fef6e0; border-radius: 20px; padding: 12px 16px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+        .param { flex: 1; min-width: 110px; }
+        .param label { display: block; font-size: 0.7rem; font-weight: 600; color: #b45a1c; margin-bottom: 3px; }
+        .input-wrapper { position: relative; display: flex; align-items: center; }
+        .input-wrapper input { width: 100%; padding: 8px 28px 8px 10px; font-size: 0.9rem; border: 1px solid #fcd9a7; border-radius: 40px; background: white; font-weight: 500; }
+        .input-wrapper input:focus { outline: none; border-color: #f97316; box-shadow: 0 0 0 2px rgba(249,115,22,0.2); }
+        .clear-icon { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; color: #b45a1c; cursor: pointer; background: #fff0dd; border-radius: 50%; line-height: 1; }
+        .result-box { background: #fff1e0; border-radius: 16px; padding: 6px 12px; text-align: center; min-width: 100px; }
+        .result-box .label { font-size: 0.65rem; font-weight: 600; color: #9a4d1a; }
+        .result-box .value { font-size: 1.1rem; font-weight: 800; color: #c2410c; line-height: 1.2; }
+        .unit-switch { display: flex; align-items: center; gap: 8px; background: white; padding: 4px 12px; border-radius: 40px; border: 1px solid #fcd9a7; }
+        .unit-switch span { font-size: 0.7rem; font-weight: 600; color: #b45a1c; }
+        .unit-switch label { display: flex; align-items: center; gap: 4px; font-size: 0.7rem; }
+        .param-with-unit { display: flex; gap: 6px; align-items: flex-end; }
+        .param-with-unit .param { flex: 2; }
+        .param-with-unit .unit-switch { margin-bottom: 6px; padding: 4px 8px; }
+        .table-wrap { overflow-x: auto; margin-bottom: 16px; border-radius: 20px; border: 1px solid #ffe6cc; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 500px; }
+        .data-table th { background: #fef3ce; padding: 10px 8px; font-weight: 700; color: #7c2d12; border-bottom: 1px solid #ffe0b5; font-size: 0.85rem; }
+        .data-table td { padding: 8px 6px; border-bottom: 1px solid #fff0e0; vertical-align: middle; }
+        .data-table .input-wrapper { width: 100%; }
+        .data-table .input-wrapper input { padding: 6px 28px 6px 10px; font-size: 0.85rem; }
+        .delete-row-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #d97706; padding: 4px 8px; border-radius: 30px; font-weight: bold; }
+        .totals-row td { background: #fff7e8; padding: 10px 8px; }
+        .total-block { display: flex; flex-direction: column; gap: 4px; }
+        .total-sum { font-weight: 800; font-size: 0.9rem; color: #9a3412; }
+        .total-percent { font-size: 0.7rem; background: #ffedd5; display: inline-block; padding: 2px 8px; border-radius: 40px; color: #b45309; width: fit-content; }
+        .action-buttons { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; justify-content: space-between; align-items: center; }
+        .btn { padding: 8px 20px; font-size: 0.85rem; font-weight: 600; border-radius: 60px; border: none; cursor: pointer; background: #f1f5f9; transition: 0.1s; }
+        .btn-primary { background: #f97316; color: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .btn-danger { background: #fff1f0; color: #b91c1c; border: 1px solid #fecaca; }
+        .add-row-btn { background: #fef3c7; border: 1px dashed #f97316; padding: 6px 16px; font-size: 0.8rem; }
+        .footer-note { text-align: center; font-size: 0.65rem; color: #94a3b8; margin-top: 16px; }
+        @media (max-width: 700px) { .app { padding: 12px; } .params-grid { flex-direction: column; align-items: stretch; } .param-with-unit { flex-wrap: wrap; } .btn { padding: 6px 14px; } }
     </style>
 </head>
 <body>
@@ -260,28 +56,16 @@
     <div class="params-grid">
         <div class="param">
             <label>📦 Паллет (шт)</label>
-            <div class="input-wrapper">
-                <input type="text" inputmode="decimal" id="palletCount" value="0">
-                <span class="clear-icon">✕</span>
-            </div>
+            <div class="input-wrapper"><input type="text" inputmode="decimal" id="palletCount" value="0"><span class="clear-icon">✕</span></div>
         </div>
         <div class="param">
             <label>📦 Штук / паллета</label>
-            <div class="input-wrapper">
-                <input type="text" inputmode="decimal" id="pcsPerPallet" value="0">
-                <span class="clear-icon">✕</span>
-            </div>
+            <div class="input-wrapper"><input type="text" inputmode="decimal" id="pcsPerPallet" value="0"><span class="clear-icon">✕</span></div>
         </div>
-        <div class="result-box">
-            <div class="label">📊 Всего штук</div>
-            <div class="value" id="totalPcsDisplay">0</div>
-        </div>
+        <div class="result-box"><div class="label">📊 Всего штук</div><div class="value" id="totalPcsDisplay">0</div></div>
         <div class="param">
             <label>📦 Взяли (упаковок)</label>
-            <div class="input-wrapper">
-                <input type="text" inputmode="decimal" id="packageCount" value="10">
-                <span class="clear-icon">✕</span>
-            </div>
+            <div class="input-wrapper"><input type="text" inputmode="decimal" id="packageCount" value="10"><span class="clear-icon">✕</span></div>
         </div>
         <div class="param-with-unit">
             <div class="param">
@@ -296,10 +80,7 @@
                 <label><input type="radio" name="weightUnit" value="g"> г</label>
             </div>
         </div>
-        <div class="result-box">
-            <div class="label">⚖️ Общий вес</div>
-            <div class="value" id="totalWeightDisplay">0.00 кг</div>
-        </div>
+        <div class="result-box"><div class="label">⚖️ Общий вес</div><div class="value" id="totalWeightDisplay">0.00 кг</div></div>
     </div>
 
     <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
@@ -347,56 +128,51 @@
         const weightPerUnitInput = document.getElementById('weightPerUnit');
         const totalWeightSpan = document.getElementById('totalWeightDisplay');
         
-        // Переключатели
         const weightUnitRadios = document.querySelectorAll('input[name="weightUnit"]');
         const tableUnitRadios = document.querySelectorAll('input[name="tableUnit"]');
         
         let weightUnit = 'kg';   // для поля "Вес упаковки"
-        let tableUnit = 'kg';    // для таблицы (нестандарт, отходы, некалибр)
+        let tableUnit = 'kg';    // для таблицы
         
-        let rowsData = []; // { nonStd, waste, uncal } всегда в КГ
+        let rowsData = []; // всегда в кг { nonStd, waste, uncal }
 
-        // Ключи localStorage
+        // Хранилище
         const STORAGE = {
-            palletCount: 'sep_palletCount',
-            pcsPerPallet: 'sep_pcsPerPallet',
-            packageCount: 'sep_packageCount',
-            weightPerUnit: 'sep_weightPerUnit',
-            rowsData: 'sep_rowsData',
-            weightUnit: 'sep_weightUnit',
-            tableUnit: 'sep_tableUnit'
+            palletCount: 'smooth_palletCount',
+            pcsPerPallet: 'smooth_pcsPerPallet',
+            packageCount: 'smooth_packageCount',
+            weightPerUnit: 'smooth_weightPerUnit',
+            rowsData: 'smooth_rowsData',
+            weightUnit: 'smooth_weightUnit',
+            tableUnit: 'smooth_tableUnit'
         };
 
-        function parseNum(val) {
-            let n = parseFloat(val);
-            return isNaN(n) ? 0 : n;
-        }
+        function parseNum(val) { let n = parseFloat(val); return isNaN(n) ? 0 : n; }
 
-        // Конвертация для поля веса упаковки
+        // Конвертация для веса упаковки (храним в кг)
         function kgToDisplayWeight(kg) {
             if (weightUnit === 'g') return (kg * 1000).toFixed(0);
             return kg.toFixed(3);
         }
-        function displayToKgWeight(value) {
+        function displayToKgWeight(value, unit) {
             let num = parseNum(value);
-            if (weightUnit === 'g') return num / 1000;
+            if (unit === 'g') return num / 1000;
             return num;
         }
-
         // Для таблицы
         function kgToDisplayTable(kg) {
             if (tableUnit === 'g') return (kg * 1000).toFixed(0);
             return kg.toFixed(3);
         }
-        function displayToKgTable(value) {
+        function displayToKgTable(value, unit) {
             let num = parseNum(value);
-            if (tableUnit === 'g') return num / 1000;
+            if (unit === 'g') return num / 1000;
             return num;
         }
 
         function getTotalWeight() {
             let count = parseNum(packageCountInput.value);
-            let kgPerUnit = parseNum(weightPerUnitInput.value); // всегда в кг
+            let kgPerUnit = parseNum(weightPerUnitInput.value);
             return count * kgPerUnit;
         }
         function updateTotalWeightDisplay() {
@@ -442,7 +218,8 @@
             tfoot.appendChild(row);
         }
 
-        function makeInputWithClear(valueKg, onInputCallback) {
+        // Создание поля таблицы с плавным вводом (конвертация только при blur)
+        function makeTableInput(valueKg, onUpdate) {
             let wrapper = document.createElement('div');
             wrapper.className = 'input-wrapper';
             let input = document.createElement('input');
@@ -450,14 +227,16 @@
             input.inputMode = 'decimal';
             input.value = kgToDisplayTable(valueKg);
             input.addEventListener('focus', (e) => e.target.select());
-            input.addEventListener('input', (e) => {
-                let raw = e.target.value;
+            // При вводе не трогаем, только при потере фокуса парсим и сохраняем в кг
+            input.addEventListener('blur', () => {
+                let raw = input.value.trim();
                 if (raw === '') raw = '0';
                 let num = parseFloat(raw);
                 if (isNaN(num)) num = 0;
-                let kgValue = displayToKgTable(num);
+                let kgValue = displayToKgTable(num, tableUnit);
+                // Обновляем отображение согласно текущим единицам
                 input.value = kgToDisplayTable(kgValue);
-                if (onInputCallback) onInputCallback(kgValue);
+                if (onUpdate) onUpdate(kgValue);
             });
             let clearSpan = document.createElement('span');
             clearSpan.className = 'clear-icon';
@@ -465,7 +244,7 @@
             clearSpan.addEventListener('click', (e) => {
                 e.stopPropagation();
                 input.value = kgToDisplayTable(0);
-                if (onInputCallback) onInputCallback(0);
+                if (onUpdate) onUpdate(0);
                 input.focus();
             });
             wrapper.appendChild(input);
@@ -478,7 +257,8 @@
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     e.stopPropagation();
-                    e.stopImmediatePropagation();
+                    // Сначала принудительно вызываем blur, чтобы сохранить текущее значение
+                    inputElement.blur();
                     if (rowIndex + 1 < rowsData.length) {
                         let nextRow = tbody.children[rowIndex + 1];
                         if (nextRow && nextRow.cells[colIndex]) {
@@ -530,7 +310,7 @@
                     let td = document.createElement('td');
                     let field = cols[c];
                     let valKg = row[field];
-                    let { wrapper, input } = makeInputWithClear(valKg, (newKg) => {
+                    let { wrapper, input } = makeTableInput(valKg, (newKg) => {
                         rowsData[i][field] = newKg;
                         updateFooter();
                         saveAll();
@@ -589,9 +369,8 @@
             if (savedRows) {
                 try {
                     let parsed = JSON.parse(savedRows);
-                    if (Array.isArray(parsed) && parsed.length) {
-                        rowsData = parsed;
-                    } else throw new Error();
+                    if (Array.isArray(parsed) && parsed.length) rowsData = parsed;
+                    else throw new Error();
                 } catch(e) {
                     rowsData = [];
                     for (let i = 0; i < 3; i++) rowsData.push({ nonStd: 0, waste: 0, uncal: 0 });
@@ -601,35 +380,23 @@
                 for (let i = 0; i < 3; i++) rowsData.push({ nonStd: 0, waste: 0, uncal: 0 });
             }
             let savedWeightUnit = localStorage.getItem(STORAGE.weightUnit);
-            if (savedWeightUnit === 'g') {
-                weightUnit = 'g';
-                document.querySelector('input[name="weightUnit"][value="g"]').checked = true;
-            } else {
-                weightUnit = 'kg';
-                document.querySelector('input[name="weightUnit"][value="kg"]').checked = true;
-            }
+            if (savedWeightUnit === 'g') { weightUnit = 'g'; document.querySelector('input[name="weightUnit"][value="g"]').checked = true; }
+            else { weightUnit = 'kg'; document.querySelector('input[name="weightUnit"][value="kg"]').checked = true; }
             let savedTableUnit = localStorage.getItem(STORAGE.tableUnit);
-            if (savedTableUnit === 'g') {
-                tableUnit = 'g';
-                document.querySelector('input[name="tableUnit"][value="g"]').checked = true;
-            } else {
-                tableUnit = 'kg';
-                document.querySelector('input[name="tableUnit"][value="kg"]').checked = true;
-            }
+            if (savedTableUnit === 'g') { tableUnit = 'g'; document.querySelector('input[name="tableUnit"][value="g"]').checked = true; }
+            else { tableUnit = 'kg'; document.querySelector('input[name="tableUnit"][value="kg"]').checked = true; }
         }
 
         function resetAll() {
-            if (confirm('⚠️ Сбросить все данные? Параметры и таблица вернутся к значениям по умолчанию.')) {
+            if (confirm('⚠️ Сбросить все данные?')) {
                 palletCountInput.value = '0';
                 pcsPerPalletInput.value = '0';
                 packageCountInput.value = '10';
                 weightPerUnitInput.value = '15';
                 rowsData = [];
                 for (let i = 0; i < 3; i++) rowsData.push({ nonStd: 0, waste: 0, uncal: 0 });
-                weightUnit = 'kg';
-                document.querySelector('input[name="weightUnit"][value="kg"]').checked = true;
-                tableUnit = 'kg';
-                document.querySelector('input[name="tableUnit"][value="kg"]').checked = true;
+                weightUnit = 'kg'; document.querySelector('input[name="weightUnit"][value="kg"]').checked = true;
+                tableUnit = 'kg'; document.querySelector('input[name="tableUnit"][value="kg"]').checked = true;
                 renderTable();
                 updateWeightFieldDisplay();
                 updateTotalPcs();
@@ -660,20 +427,15 @@
             alert(msg);
         }
 
-        // Обработка поля "Вес упаковки" с отдельным переключателем
-        function updateWeightFieldDisplay() {
-            let currentKg = parseNum(weightPerUnitInput.value);
-            weightPerUnitInput.value = kgToDisplayWeight(currentKg);
-        }
-
+        // Поле веса упаковки: плавный ввод, конвертация при blur
         function setupWeightPerUnitField() {
             weightPerUnitInput.addEventListener('focus', (e) => e.target.select());
-            weightPerUnitInput.addEventListener('input', () => {
-                let raw = weightPerUnitInput.value;
+            weightPerUnitInput.addEventListener('blur', () => {
+                let raw = weightPerUnitInput.value.trim();
                 if (raw === '') raw = '0';
                 let num = parseFloat(raw);
                 if (isNaN(num)) num = 0;
-                let kgValue = displayToKgWeight(num);
+                let kgValue = displayToKgWeight(num, weightUnit);
                 weightPerUnitInput.value = kgToDisplayWeight(kgValue);
                 updateTotalWeightDisplay();
                 updateFooter();
@@ -691,6 +453,10 @@
                     weightPerUnitInput.focus();
                 });
             }
+        }
+        function updateWeightFieldDisplay() {
+            let currentKg = parseNum(weightPerUnitInput.value);
+            weightPerUnitInput.value = kgToDisplayWeight(currentKg);
         }
 
         function attachTopFieldHandlers() {
@@ -732,7 +498,6 @@
             updateWeightFieldDisplay();
             saveAll();
         }
-
         function onTableUnitChange() {
             let newUnit = document.querySelector('input[name="tableUnit"]:checked').value;
             if (newUnit === tableUnit) return;
@@ -761,4 +526,4 @@
     })();
 </script>
 </body>
-</html>
+    </html>
