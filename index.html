@@ -25,6 +25,9 @@
         .result-box { background: #fff1e0; border-radius: 16px; padding: 6px 12px; text-align: center; min-width: 100px; }
         .result-box .label { font-size: 0.65rem; font-weight: 600; color: #9a4d1a; }
         .result-box .value { font-size: 1.1rem; font-weight: 800; color: #c2410c; line-height: 1.2; }
+        .time-box { background: #e6f7f0; border-radius: 16px; padding: 4px 12px; text-align: center; min-width: 140px; }
+        .time-box .label { font-size: 0.6rem; font-weight: 600; color: #0f5c3f; }
+        .time-box .value { font-size: 0.75rem; font-weight: 500; color: #1f6e4a; }
         .unit-switch { display: flex; align-items: center; gap: 8px; background: white; padding: 4px 12px; border-radius: 40px; border: 1px solid #fcd9a7; }
         .unit-switch span { font-size: 0.7rem; font-weight: 600; color: #b45a1c; }
         .unit-switch label { display: flex; align-items: center; gap: 4px; font-size: 0.7rem; }
@@ -80,7 +83,9 @@
                 <label><input type="radio" name="weightUnit" value="g"> г</label>
             </div>
         </div>
-        <div class="result-box"><div class="label">⚖️ Общий вес</div><div class="value" id="totalWeightDisplay">0.00 кг</div></div>
+        <div class="result-box"><div class="label">⚖️ Общий вес (всегда кг)</div><div class="value" id="totalWeightDisplay">0.00 кг</div></div>
+        <div class="time-box"><div class="label">⏱️ Начало</div><div class="value" id="startTimeDisplay">—</div></div>
+        <div class="time-box"><div class="label">🏁 Завершение</div><div class="value" id="endTimeDisplay">—</div></div>
     </div>
 
     <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
@@ -108,8 +113,9 @@
         <button class="btn btn-danger" id="resetBtn">🔄 Обнулить всё</button>
     </div>
     <div class="footer-note">
-        * Enter → переход на следующую строку (вниз). Если строка последняя — добавится новая.<br>
-        * Для веса упаковки и для таблицы — отдельные переключатели кг/г.
+        * Enter → переход на следующую строку (вниз).<br>
+        * Общий вес и итоги таблицы всегда в кг.<br>
+        * Время начала фиксируется при первом вводе данных.
     </div>
 </div>
 
@@ -127,29 +133,55 @@
         const packageCountInput = document.getElementById('packageCount');
         const weightPerUnitInput = document.getElementById('weightPerUnit');
         const totalWeightSpan = document.getElementById('totalWeightDisplay');
+        const startTimeSpan = document.getElementById('startTimeDisplay');
+        const endTimeSpan = document.getElementById('endTimeDisplay');
         
         const weightUnitRadios = document.querySelectorAll('input[name="weightUnit"]');
         const tableUnitRadios = document.querySelectorAll('input[name="tableUnit"]');
         
-        let weightUnit = 'kg';   // для поля "Вес упаковки"
-        let tableUnit = 'kg';    // для таблицы
+        let weightUnit = 'kg';
+        let tableUnit = 'kg';
+        let rowsData = []; // всегда в кг
         
-        let rowsData = []; // всегда в кг { nonStd, waste, uncal }
+        let startTime = null;   // ISO строка
+        let endTime = null;
 
         // Хранилище
         const STORAGE = {
-            palletCount: 'smooth2_palletCount',
-            pcsPerPallet: 'smooth2_pcsPerPallet',
-            packageCount: 'smooth2_packageCount',
-            weightPerUnit: 'smooth2_weightPerUnit',
-            rowsData: 'smooth2_rowsData',
-            weightUnit: 'smooth2_weightUnit',
-            tableUnit: 'smooth2_tableUnit'
+            palletCount: 'time_palletCount',
+            pcsPerPallet: 'time_pcsPerPallet',
+            packageCount: 'time_packageCount',
+            weightPerUnit: 'time_weightPerUnit',
+            rowsData: 'time_rowsData',
+            weightUnit: 'time_weightUnit',
+            tableUnit: 'time_tableUnit',
+            startTime: 'time_startTime',
+            endTime: 'time_endTime'
         };
 
         function parseNum(val) { let n = parseFloat(val); return isNaN(n) ? 0 : n; }
 
-        // Конвертация для веса упаковки (храним в кг)
+        // Форматирование времени
+        function formatDateTime(iso) {
+            if (!iso) return '—';
+            let d = new Date(iso);
+            return d.toLocaleString('ru-RU', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit'});
+        }
+        function updateTimeDisplays() {
+            startTimeSpan.innerText = formatDateTime(startTime);
+            endTimeSpan.innerText = formatDateTime(endTime);
+        }
+
+        // Фиксация времени начала (при первом вводе в любое из полей)
+        function setStartTimeIfNeeded() {
+            if (!startTime) {
+                startTime = new Date().toISOString();
+                saveAll();
+                updateTimeDisplays();
+            }
+        }
+
+        // Конвертация для веса упаковки
         function kgToDisplayWeight(kg) {
             if (weightUnit === 'g') return (kg * 1000).toFixed(0);
             return kg.toFixed(3);
@@ -172,8 +204,9 @@
 
         function getTotalWeight() {
             let count = parseNum(packageCountInput.value);
-            let kgPerUnit = parseNum(weightPerUnitInput.value);
-            return count * kgPerUnit;
+            let weightValue = parseNum(weightPerUnitInput.value);
+            if (weightUnit === 'g') weightValue = weightValue / 1000;
+            return count * weightValue;
         }
         function updateTotalWeightDisplay() {
             totalWeightSpan.innerText = getTotalWeight().toFixed(2) + ' кг';
@@ -218,7 +251,6 @@
             tfoot.appendChild(row);
         }
 
-        // Создание поля таблицы с плавным вводом (конвертация только при blur)
         function makeTableInput(valueKg, onUpdate) {
             let wrapper = document.createElement('div');
             wrapper.className = 'input-wrapper';
@@ -255,7 +287,7 @@
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     e.stopPropagation();
-                    inputElement.blur(); // сохраняем значение
+                    inputElement.blur();
                     if (rowIndex + 1 < rowsData.length) {
                         let nextRow = tbody.children[rowIndex + 1];
                         if (nextRow && nextRow.cells[colIndex]) {
@@ -351,6 +383,8 @@
             localStorage.setItem(STORAGE.rowsData, JSON.stringify(rowsData));
             localStorage.setItem(STORAGE.weightUnit, weightUnit);
             localStorage.setItem(STORAGE.tableUnit, tableUnit);
+            if (startTime) localStorage.setItem(STORAGE.startTime, startTime);
+            if (endTime) localStorage.setItem(STORAGE.endTime, endTime);
         }
 
         function loadAll() {
@@ -382,10 +416,16 @@
             let savedTableUnit = localStorage.getItem(STORAGE.tableUnit);
             if (savedTableUnit === 'g') { tableUnit = 'g'; document.querySelector('input[name="tableUnit"][value="g"]').checked = true; }
             else { tableUnit = 'kg'; document.querySelector('input[name="tableUnit"][value="kg"]').checked = true; }
+            
+            let savedStart = localStorage.getItem(STORAGE.startTime);
+            if (savedStart) startTime = savedStart;
+            let savedEnd = localStorage.getItem(STORAGE.endTime);
+            if (savedEnd) endTime = savedEnd;
+            updateTimeDisplays();
         }
 
         function resetAll() {
-            if (confirm('⚠️ Сбросить все данные?')) {
+            if (confirm('⚠️ Сбросить все данные? Параметры, таблица и время начала/завершения будут сброшены.')) {
                 palletCountInput.value = '0';
                 pcsPerPalletInput.value = '0';
                 packageCountInput.value = '10';
@@ -394,16 +434,25 @@
                 for (let i = 0; i < 3; i++) rowsData.push({ nonStd: 0, waste: 0, uncal: 0 });
                 weightUnit = 'kg'; document.querySelector('input[name="weightUnit"][value="kg"]').checked = true;
                 tableUnit = 'kg'; document.querySelector('input[name="tableUnit"][value="kg"]').checked = true;
+                startTime = null;
+                endTime = null;
                 renderTable();
                 updateWeightFieldDisplay();
                 updateTotalPcs();
                 updateTotalWeightDisplay();
                 updateFooter();
+                updateTimeDisplays();
                 saveAll();
             }
         }
 
         function completeReceipt() {
+            // Фиксируем время завершения, если ещё не зафиксировано
+            if (!endTime) {
+                endTime = new Date().toISOString();
+                saveAll();
+                updateTimeDisplays();
+            }
             let totalW = getTotalWeight();
             let { sumNon, sumWaste, sumUncal } = calculateTotals();
             let perc = getPercentages(totalW, sumNon, sumWaste, sumUncal);
@@ -411,10 +460,13 @@
             let pcsPal = parseNum(pcsPerPalletInput.value);
             let totalPcs = pal * pcsPal;
             let packs = parseNum(packageCountInput.value);
-            let kgPack = parseNum(weightPerUnitInput.value);
-            let msg = `📋 ОТЧЁТ\n━━━━━━━━━━━━━━━━━━━━\n`;
+            let kgPack = (weightUnit === 'g') ? parseNum(weightPerUnitInput.value) / 1000 : parseNum(weightPerUnitInput.value);
+            let msg = `📋 ОТЧЁТ ПРИЁМКИ\n━━━━━━━━━━━━━━━━━━━━\n`;
+            msg += `⏱️ Начало: ${formatDateTime(startTime)}\n`;
+            msg += `🏁 Завершение: ${formatDateTime(endTime)}\n`;
+            msg += `━━━━━━━━━━━━━━━━━━━━\n`;
             msg += `📦 Паллет: ${pal} шт × ${pcsPal} шт/пал = ${totalPcs} шт\n`;
-            msg += `📦 Взято: ${packs} уп. × ${kgPack} кг = ${totalW.toFixed(2)} кг\n`;
+            msg += `📦 Взято: ${packs} уп. × ${kgPack.toFixed(3)} кг = ${totalW.toFixed(2)} кг\n`;
             msg += `━━━━━━━━━━━━━━━━━━━━\n`;
             msg += `⚠️ Нестандарт: ${sumNon.toFixed(2)} кг  (${perc.pNon.toFixed(1)}%)\n`;
             msg += `🗑️ Отходы:     ${sumWaste.toFixed(2)} кг  (${perc.pWaste.toFixed(1)}%)\n`;
@@ -424,7 +476,6 @@
             alert(msg);
         }
 
-        // Поле веса упаковки: плавный ввод, конвертация при blur
         function setupWeightPerUnitField() {
             weightPerUnitInput.addEventListener('focus', (e) => e.target.select());
             weightPerUnitInput.addEventListener('blur', () => {
@@ -454,6 +505,23 @@
         function updateWeightFieldDisplay() {
             let currentKg = parseNum(weightPerUnitInput.value);
             weightPerUnitInput.value = kgToDisplayWeight(currentKg);
+        }
+
+        // Обработчики для полей, которые фиксируют время начала
+        function attachStartTimeTriggers() {
+            const fields = [palletCountInput, pcsPerPalletInput, packageCountInput, weightPerUnitInput];
+            for (let field of fields) {
+                field.addEventListener('input', () => { setStartTimeIfNeeded(); });
+                field.addEventListener('blur', () => { setStartTimeIfNeeded(); });
+                // Также крестик очистки — но он не вызывает input? Добавим отдельно через мутацию? Проще: при клике на крестик тоже фиксируем.
+                let wrapper = field.closest('.input-wrapper');
+                if (wrapper) {
+                    let clearSpan = wrapper.querySelector('.clear-icon');
+                    if (clearSpan) {
+                        clearSpan.addEventListener('click', () => { setStartTimeIfNeeded(); });
+                    }
+                }
+            }
         }
 
         function attachTopFieldHandlers() {
@@ -491,11 +559,6 @@
         function onWeightUnitChange() {
             let newUnit = document.querySelector('input[name="weightUnit"]:checked').value;
             if (newUnit === weightUnit) return;
-            // Пересчитываем текущее значение из старых единиц в новые
-            let currentKg = parseNum(weightPerUnitInput.value);
-            // currentKg уже хранит килограммы, но если текущая единица была 'g', то значение в поле было в граммах? Нет, поле всегда хранит отображение.
-            // Лучше получить актуальное кг из внутреннего хранилища? Но weightPerUnitInput.value — это отображаемое число.
-            // Преобразуем отображаемое значение в кг с учётом СТАРОЙ единицы, затем в новую.
             let rawDisplay = weightPerUnitInput.value;
             let numDisplay = parseNum(rawDisplay);
             let kgValue = displayToKgWeight(numDisplay, weightUnit);
@@ -509,9 +572,6 @@
         function onTableUnitChange() {
             let newUnit = document.querySelector('input[name="tableUnit"]:checked').value;
             if (newUnit === tableUnit) return;
-            // Пересчитываем все строки таблицы: старые отображаемые значения в кг, потом в новые единицы
-            // Проще перерисовать таблицу, но нужно обновить отображаемые значения.
-            // Данные rowsData хранятся в кг, просто меняем tableUnit и перерисовываем.
             tableUnit = newUnit;
             renderTable();
             saveAll();
@@ -526,6 +586,7 @@
             updateFooter();
             attachTopFieldHandlers();
             setupWeightPerUnitField();
+            attachStartTimeTriggers(); // фиксация времени начала
             addRowBtn.addEventListener('click', () => addRow());
             completeBtn.addEventListener('click', completeReceipt);
             resetBtn.addEventListener('click', resetAll);
