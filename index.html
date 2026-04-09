@@ -138,13 +138,13 @@
 
         // Хранилище
         const STORAGE = {
-            palletCount: 'smooth_palletCount',
-            pcsPerPallet: 'smooth_pcsPerPallet',
-            packageCount: 'smooth_packageCount',
-            weightPerUnit: 'smooth_weightPerUnit',
-            rowsData: 'smooth_rowsData',
-            weightUnit: 'smooth_weightUnit',
-            tableUnit: 'smooth_tableUnit'
+            palletCount: 'smooth2_palletCount',
+            pcsPerPallet: 'smooth2_pcsPerPallet',
+            packageCount: 'smooth2_packageCount',
+            weightPerUnit: 'smooth2_weightPerUnit',
+            rowsData: 'smooth2_rowsData',
+            weightUnit: 'smooth2_weightUnit',
+            tableUnit: 'smooth2_tableUnit'
         };
 
         function parseNum(val) { let n = parseFloat(val); return isNaN(n) ? 0 : n; }
@@ -227,14 +227,12 @@
             input.inputMode = 'decimal';
             input.value = kgToDisplayTable(valueKg);
             input.addEventListener('focus', (e) => e.target.select());
-            // При вводе не трогаем, только при потере фокуса парсим и сохраняем в кг
             input.addEventListener('blur', () => {
                 let raw = input.value.trim();
                 if (raw === '') raw = '0';
                 let num = parseFloat(raw);
                 if (isNaN(num)) num = 0;
                 let kgValue = displayToKgTable(num, tableUnit);
-                // Обновляем отображение согласно текущим единицам
                 input.value = kgToDisplayTable(kgValue);
                 if (onUpdate) onUpdate(kgValue);
             });
@@ -257,8 +255,7 @@
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     e.stopPropagation();
-                    // Сначала принудительно вызываем blur, чтобы сохранить текущее значение
-                    inputElement.blur();
+                    inputElement.blur(); // сохраняем значение
                     if (rowIndex + 1 < rowsData.length) {
                         let nextRow = tbody.children[rowIndex + 1];
                         if (nextRow && nextRow.cells[colIndex]) {
@@ -494,13 +491,27 @@
         function onWeightUnitChange() {
             let newUnit = document.querySelector('input[name="weightUnit"]:checked').value;
             if (newUnit === weightUnit) return;
+            // Пересчитываем текущее значение из старых единиц в новые
+            let currentKg = parseNum(weightPerUnitInput.value);
+            // currentKg уже хранит килограммы, но если текущая единица была 'g', то значение в поле было в граммах? Нет, поле всегда хранит отображение.
+            // Лучше получить актуальное кг из внутреннего хранилища? Но weightPerUnitInput.value — это отображаемое число.
+            // Преобразуем отображаемое значение в кг с учётом СТАРОЙ единицы, затем в новую.
+            let rawDisplay = weightPerUnitInput.value;
+            let numDisplay = parseNum(rawDisplay);
+            let kgValue = displayToKgWeight(numDisplay, weightUnit);
             weightUnit = newUnit;
-            updateWeightFieldDisplay();
+            weightPerUnitInput.value = kgToDisplayWeight(kgValue);
+            updateTotalWeightDisplay();
+            updateFooter();
             saveAll();
         }
+        
         function onTableUnitChange() {
             let newUnit = document.querySelector('input[name="tableUnit"]:checked').value;
             if (newUnit === tableUnit) return;
+            // Пересчитываем все строки таблицы: старые отображаемые значения в кг, потом в новые единицы
+            // Проще перерисовать таблицу, но нужно обновить отображаемые значения.
+            // Данные rowsData хранятся в кг, просто меняем tableUnit и перерисовываем.
             tableUnit = newUnit;
             renderTable();
             saveAll();
@@ -526,4 +537,4 @@
     })();
 </script>
 </body>
-    </html>
+</html>
