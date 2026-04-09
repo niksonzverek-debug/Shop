@@ -130,6 +130,18 @@
             gap: 4px;
             font-size: 0.7rem;
         }
+        .param-with-unit {
+            display: flex;
+            gap: 6px;
+            align-items: flex-end;
+        }
+        .param-with-unit .param {
+            flex: 2;
+        }
+        .param-with-unit .unit-switch {
+            margin-bottom: 6px;
+            padding: 4px 8px;
+        }
         .table-wrap {
             overflow-x: auto;
             margin-bottom: 16px;
@@ -238,6 +250,7 @@
         @media (max-width: 700px) {
             .app { padding: 12px; }
             .params-grid { flex-direction: column; align-items: stretch; }
+            .param-with-unit { flex-wrap: wrap; }
             .btn { padding: 6px 14px; }
         }
     </style>
@@ -270,11 +283,17 @@
                 <span class="clear-icon">✕</span>
             </div>
         </div>
-        <div class="param">
-            <label>⚖️ Кг / упаковка</label>
-            <div class="input-wrapper" id="weightPerUnitWrapper">
-                <input type="text" inputmode="decimal" id="weightPerUnit" value="15">
-                <span class="clear-icon">✕</span>
+        <div class="param-with-unit">
+            <div class="param">
+                <label>⚖️ Вес упаковки</label>
+                <div class="input-wrapper" id="weightPerUnitWrapper">
+                    <input type="text" inputmode="decimal" id="weightPerUnit" value="15">
+                    <span class="clear-icon">✕</span>
+                </div>
+            </div>
+            <div class="unit-switch" id="weightUnitSwitch">
+                <label><input type="radio" name="weightUnit" value="kg" checked> кг</label>
+                <label><input type="radio" name="weightUnit" value="g"> г</label>
             </div>
         </div>
         <div class="result-box">
@@ -284,16 +303,16 @@
     </div>
 
     <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
-        <div class="unit-switch">
-            <span>📏 Единицы ввода:</span>
-            <label><input type="radio" name="unit" value="kg" checked> кг</label>
-            <label><input type="radio" name="unit" value="g"> г</label>
+        <div class="unit-switch" id="tableUnitSwitch">
+            <span>📏 Единицы таблицы:</span>
+            <label><input type="radio" name="tableUnit" value="kg" checked> кг</label>
+            <label><input type="radio" name="tableUnit" value="g"> г</label>
         </div>
     </div>
 
     <div class="table-wrap">
         <table class="data-table">
-            <thead><tr><th>⚠️ Нестандарт (кг)</th><th>🗑️ Отходы (кг)</th><th>📉 Некалибр (кг)</th><th style="width:40px"></th></tr></thead>
+            <thead><tr><th>⚠️ Нестандарт</th><th>🗑️ Отходы</th><th>📉 Некалибр</th><th style="width:40px"></th></tr></thead>
             <tbody id="tableBody"></tbody>
             <tfoot id="tableFooter"></tfoot>
         </table>
@@ -309,12 +328,13 @@
     </div>
     <div class="footer-note">
         * Enter → переход на следующую строку (вниз). Если строка последняя — добавится новая.<br>
-        * При выборе «г» ввод в таблице и в поле «Кг/упаковка» осуществляется в граммах (автоматический перевод в кг).
+        * Для веса упаковки и для таблицы — отдельные переключатели кг/г.
     </div>
 </div>
 
 <script>
     (function(){
+        // DOM элементы
         const tbody = document.getElementById('tableBody');
         const tfoot = document.getElementById('tableFooter');
         const addRowBtn = document.getElementById('addRowBtn');
@@ -326,18 +346,25 @@
         const packageCountInput = document.getElementById('packageCount');
         const weightPerUnitInput = document.getElementById('weightPerUnit');
         const totalWeightSpan = document.getElementById('totalWeightDisplay');
-        const unitRadios = document.querySelectorAll('input[name="unit"]');
         
-        let currentUnit = 'kg'; // 'kg' или 'g'
-        let rowsData = [];
+        // Переключатели
+        const weightUnitRadios = document.querySelectorAll('input[name="weightUnit"]');
+        const tableUnitRadios = document.querySelectorAll('input[name="tableUnit"]');
+        
+        let weightUnit = 'kg';   // для поля "Вес упаковки"
+        let tableUnit = 'kg';    // для таблицы (нестандарт, отходы, некалибр)
+        
+        let rowsData = []; // { nonStd, waste, uncal } всегда в КГ
 
+        // Ключи localStorage
         const STORAGE = {
-            palletCount: 'compact_palletCount',
-            pcsPerPallet: 'compact_pcsPerPallet',
-            packageCount: 'compact_packageCount',
-            weightPerUnit: 'compact_weightPerUnit',
-            rowsData: 'compact_rowsData',
-            unit: 'compact_unit'
+            palletCount: 'sep_palletCount',
+            pcsPerPallet: 'sep_pcsPerPallet',
+            packageCount: 'sep_packageCount',
+            weightPerUnit: 'sep_weightPerUnit',
+            rowsData: 'sep_rowsData',
+            weightUnit: 'sep_weightUnit',
+            tableUnit: 'sep_tableUnit'
         };
 
         function parseNum(val) {
@@ -345,32 +372,31 @@
             return isNaN(n) ? 0 : n;
         }
 
-        // Конвертация для отображения в поле веса упаковки
+        // Конвертация для поля веса упаковки
         function kgToDisplayWeight(kg) {
-            if (currentUnit === 'g') return (kg * 1000).toFixed(0);
+            if (weightUnit === 'g') return (kg * 1000).toFixed(0);
             return kg.toFixed(3);
         }
         function displayToKgWeight(value) {
             let num = parseNum(value);
-            if (currentUnit === 'g') return num / 1000;
+            if (weightUnit === 'g') return num / 1000;
             return num;
         }
 
         // Для таблицы
-        function kgToDisplay(kg) {
-            if (currentUnit === 'g') return (kg * 1000).toFixed(0);
+        function kgToDisplayTable(kg) {
+            if (tableUnit === 'g') return (kg * 1000).toFixed(0);
             return kg.toFixed(3);
         }
-        function displayToKg(value) {
+        function displayToKgTable(value) {
             let num = parseNum(value);
-            if (currentUnit === 'g') return num / 1000;
+            if (tableUnit === 'g') return num / 1000;
             return num;
         }
 
         function getTotalWeight() {
             let count = parseNum(packageCountInput.value);
-            let kgPerUnit = parseNum(weightPerUnitInput.value);
-            // weightPerUnitInput хранит всегда кг (после конвертации)
+            let kgPerUnit = parseNum(weightPerUnitInput.value); // всегда в кг
             return count * kgPerUnit;
         }
         function updateTotalWeightDisplay() {
@@ -422,15 +448,15 @@
             let input = document.createElement('input');
             input.type = 'text';
             input.inputMode = 'decimal';
-            input.value = kgToDisplay(valueKg);
+            input.value = kgToDisplayTable(valueKg);
             input.addEventListener('focus', (e) => e.target.select());
             input.addEventListener('input', (e) => {
                 let raw = e.target.value;
                 if (raw === '') raw = '0';
                 let num = parseFloat(raw);
                 if (isNaN(num)) num = 0;
-                let kgValue = displayToKg(num);
-                input.value = kgToDisplay(kgValue);
+                let kgValue = displayToKgTable(num);
+                input.value = kgToDisplayTable(kgValue);
                 if (onInputCallback) onInputCallback(kgValue);
             });
             let clearSpan = document.createElement('span');
@@ -438,7 +464,7 @@
             clearSpan.innerText = '✕';
             clearSpan.addEventListener('click', (e) => {
                 e.stopPropagation();
-                input.value = kgToDisplay(0);
+                input.value = kgToDisplayTable(0);
                 if (onInputCallback) onInputCallback(0);
                 input.focus();
             });
@@ -544,10 +570,10 @@
             localStorage.setItem(STORAGE.palletCount, palletCountInput.value);
             localStorage.setItem(STORAGE.pcsPerPallet, pcsPerPalletInput.value);
             localStorage.setItem(STORAGE.packageCount, packageCountInput.value);
-            // weightPerUnitInput хранит всегда кг (число)
             localStorage.setItem(STORAGE.weightPerUnit, weightPerUnitInput.value);
             localStorage.setItem(STORAGE.rowsData, JSON.stringify(rowsData));
-            localStorage.setItem(STORAGE.unit, currentUnit);
+            localStorage.setItem(STORAGE.weightUnit, weightUnit);
+            localStorage.setItem(STORAGE.tableUnit, tableUnit);
         }
 
         function loadAll() {
@@ -574,13 +600,21 @@
                 rowsData = [];
                 for (let i = 0; i < 3; i++) rowsData.push({ nonStd: 0, waste: 0, uncal: 0 });
             }
-            let savedUnit = localStorage.getItem(STORAGE.unit);
-            if (savedUnit === 'g') {
-                currentUnit = 'g';
-                document.querySelector('input[name="unit"][value="g"]').checked = true;
+            let savedWeightUnit = localStorage.getItem(STORAGE.weightUnit);
+            if (savedWeightUnit === 'g') {
+                weightUnit = 'g';
+                document.querySelector('input[name="weightUnit"][value="g"]').checked = true;
             } else {
-                currentUnit = 'kg';
-                document.querySelector('input[name="unit"][value="kg"]').checked = true;
+                weightUnit = 'kg';
+                document.querySelector('input[name="weightUnit"][value="kg"]').checked = true;
+            }
+            let savedTableUnit = localStorage.getItem(STORAGE.tableUnit);
+            if (savedTableUnit === 'g') {
+                tableUnit = 'g';
+                document.querySelector('input[name="tableUnit"][value="g"]').checked = true;
+            } else {
+                tableUnit = 'kg';
+                document.querySelector('input[name="tableUnit"][value="kg"]').checked = true;
             }
         }
 
@@ -592,7 +626,12 @@
                 weightPerUnitInput.value = '15';
                 rowsData = [];
                 for (let i = 0; i < 3; i++) rowsData.push({ nonStd: 0, waste: 0, uncal: 0 });
+                weightUnit = 'kg';
+                document.querySelector('input[name="weightUnit"][value="kg"]').checked = true;
+                tableUnit = 'kg';
+                document.querySelector('input[name="tableUnit"][value="kg"]').checked = true;
                 renderTable();
+                updateWeightFieldDisplay();
                 updateTotalPcs();
                 updateTotalWeightDisplay();
                 updateFooter();
@@ -621,14 +660,13 @@
             alert(msg);
         }
 
-        // Обработка поля "Кг/упаковка" с учётом единиц
+        // Обработка поля "Вес упаковки" с отдельным переключателем
+        function updateWeightFieldDisplay() {
+            let currentKg = parseNum(weightPerUnitInput.value);
+            weightPerUnitInput.value = kgToDisplayWeight(currentKg);
+        }
+
         function setupWeightPerUnitField() {
-            // Функция обновления отображения поля в зависимости от currentUnit
-            function updateWeightFieldDisplay() {
-                let currentKg = parseNum(weightPerUnitInput.value);
-                weightPerUnitInput.value = kgToDisplayWeight(currentKg);
-            }
-            // Обработчик ввода
             weightPerUnitInput.addEventListener('focus', (e) => e.target.select());
             weightPerUnitInput.addEventListener('input', () => {
                 let raw = weightPerUnitInput.value;
@@ -641,7 +679,6 @@
                 updateFooter();
                 saveAll();
             });
-            // Крестик для очистки
             let wrapper = document.getElementById('weightPerUnitWrapper');
             let clearSpan = wrapper.querySelector('.clear-icon');
             if (clearSpan) {
@@ -654,8 +691,6 @@
                     weightPerUnitInput.focus();
                 });
             }
-            // При смене единиц обновить отображение поля
-            return updateWeightFieldDisplay;
         }
 
         function attachTopFieldHandlers() {
@@ -690,15 +725,18 @@
             }
         }
 
-        let updateWeightFieldDisplay = setupWeightPerUnitField();
-
-        function onUnitChange() {
-            let newUnit = document.querySelector('input[name="unit"]:checked').value;
-            if (newUnit === currentUnit) return;
-            currentUnit = newUnit;
-            // Обновить отображение поля веса упаковки
+        function onWeightUnitChange() {
+            let newUnit = document.querySelector('input[name="weightUnit"]:checked').value;
+            if (newUnit === weightUnit) return;
+            weightUnit = newUnit;
             updateWeightFieldDisplay();
-            // Перерисовать таблицу с новыми единицами
+            saveAll();
+        }
+
+        function onTableUnitChange() {
+            let newUnit = document.querySelector('input[name="tableUnit"]:checked').value;
+            if (newUnit === tableUnit) return;
+            tableUnit = newUnit;
             renderTable();
             saveAll();
         }
@@ -706,15 +744,17 @@
         function init() {
             loadAll();
             renderTable();
+            updateWeightFieldDisplay();
             updateTotalPcs();
             updateTotalWeightDisplay();
             updateFooter();
             attachTopFieldHandlers();
-            updateWeightFieldDisplay(); // синхронизация отображения поля веса
+            setupWeightPerUnitField();
             addRowBtn.addEventListener('click', () => addRow());
             completeBtn.addEventListener('click', completeReceipt);
             resetBtn.addEventListener('click', resetAll);
-            unitRadios.forEach(radio => radio.addEventListener('change', onUnitChange));
+            weightUnitRadios.forEach(radio => radio.addEventListener('change', onWeightUnitChange));
+            tableUnitRadios.forEach(radio => radio.addEventListener('change', onTableUnitChange));
             window.addEventListener('beforeunload', () => saveAll());
         }
         init();
