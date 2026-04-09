@@ -272,7 +272,7 @@
         </div>
         <div class="param">
             <label>⚖️ Кг / упаковка</label>
-            <div class="input-wrapper">
+            <div class="input-wrapper" id="weightPerUnitWrapper">
                 <input type="text" inputmode="decimal" id="weightPerUnit" value="15">
                 <span class="clear-icon">✕</span>
             </div>
@@ -292,7 +292,7 @@
     </div>
 
     <div class="table-wrap">
-        <table class="data-table" id="mainTable">
+        <table class="data-table">
             <thead><tr><th>⚠️ Нестандарт (кг)</th><th>🗑️ Отходы (кг)</th><th>📉 Некалибр (кг)</th><th style="width:40px"></th></tr></thead>
             <tbody id="tableBody"></tbody>
             <tfoot id="tableFooter"></tfoot>
@@ -308,8 +308,8 @@
         <button class="btn btn-danger" id="resetBtn">🔄 Обнулить всё</button>
     </div>
     <div class="footer-note">
-        * Enter → переход на следующую строку (вниз) в том же столбце. Если строка последняя — добавится новая.<br>
-        * При выборе «г» введённые числа переводятся в кг (деление на 1000).
+        * Enter → переход на следующую строку (вниз). Если строка последняя — добавится новая.<br>
+        * При выборе «г» ввод в таблице и в поле «Кг/упаковка» осуществляется в граммах (автоматический перевод в кг).
     </div>
 </div>
 
@@ -328,7 +328,7 @@
         const totalWeightSpan = document.getElementById('totalWeightDisplay');
         const unitRadios = document.querySelectorAll('input[name="unit"]');
         
-        let currentUnit = 'kg';
+        let currentUnit = 'kg'; // 'kg' или 'g'
         let rowsData = [];
 
         const STORAGE = {
@@ -345,6 +345,18 @@
             return isNaN(n) ? 0 : n;
         }
 
+        // Конвертация для отображения в поле веса упаковки
+        function kgToDisplayWeight(kg) {
+            if (currentUnit === 'g') return (kg * 1000).toFixed(0);
+            return kg.toFixed(3);
+        }
+        function displayToKgWeight(value) {
+            let num = parseNum(value);
+            if (currentUnit === 'g') return num / 1000;
+            return num;
+        }
+
+        // Для таблицы
         function kgToDisplay(kg) {
             if (currentUnit === 'g') return (kg * 1000).toFixed(0);
             return kg.toFixed(3);
@@ -356,7 +368,10 @@
         }
 
         function getTotalWeight() {
-            return parseNum(packageCountInput.value) * parseNum(weightPerUnitInput.value);
+            let count = parseNum(packageCountInput.value);
+            let kgPerUnit = parseNum(weightPerUnitInput.value);
+            // weightPerUnitInput хранит всегда кг (после конвертации)
+            return count * kgPerUnit;
         }
         function updateTotalWeightDisplay() {
             totalWeightSpan.innerText = getTotalWeight().toFixed(2) + ' кг';
@@ -407,7 +422,6 @@
             let input = document.createElement('input');
             input.type = 'text';
             input.inputMode = 'decimal';
-            input.enterkeyhint = 'next';  // подсказка мобильной клавиатуре
             input.value = kgToDisplay(valueKg);
             input.addEventListener('focus', (e) => e.target.select());
             input.addEventListener('input', (e) => {
@@ -433,65 +447,51 @@
             return { wrapper, input };
         }
 
-        // Функция перехода на следующую строку в том же столбце
-        function moveFocusDown(currentRowIndex, colIndex) {
-            if (currentRowIndex + 1 < rowsData.length) {
-                let nextRow = tbody.children[currentRowIndex + 1];
-                if (nextRow && nextRow.cells[colIndex]) {
-                    let wrapper = nextRow.cells[colIndex].querySelector('.input-wrapper');
+        function attachEnterToInput(inputElement, rowIndex, colIndex) {
+            const handler = (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    if (rowIndex + 1 < rowsData.length) {
+                        let nextRow = tbody.children[rowIndex + 1];
+                        if (nextRow && nextRow.cells[colIndex]) {
+                            let wrapper = nextRow.cells[colIndex].querySelector('.input-wrapper');
+                            if (wrapper) {
+                                let inp = wrapper.querySelector('input');
+                                if (inp) {
+                                    inp.focus();
+                                    inp.select();
+                                }
+                            }
+                        }
+                    } else {
+                        addRowAndFocus(colIndex);
+                    }
+                    return false;
+                }
+            };
+            inputElement.addEventListener('keydown', handler);
+            inputElement.addEventListener('keypress', handler);
+        }
+
+        function addRowAndFocus(colIndex) {
+            rowsData.push({ nonStd: 0, waste: 0, uncal: 0 });
+            renderTable();
+            saveAll();
+            setTimeout(() => {
+                let newRow = tbody.lastElementChild;
+                if (newRow && newRow.cells && newRow.cells[colIndex]) {
+                    let wrapper = newRow.cells[colIndex].querySelector('.input-wrapper');
                     if (wrapper) {
                         let inp = wrapper.querySelector('input');
                         if (inp) {
                             inp.focus();
                             inp.select();
-                            return true;
                         }
                     }
                 }
-            } else {
-                // Добавляем новую строку и фокусируемся в ней
-                rowsData.push({ nonStd: 0, waste: 0, uncal: 0 });
-                renderTable();
-                saveAll();
-                setTimeout(() => {
-                    let newRow = tbody.lastElementChild;
-                    if (newRow && newRow.cells[colIndex]) {
-                        let wrapper = newRow.cells[colIndex].querySelector('.input-wrapper');
-                        if (wrapper) {
-                            let inp = wrapper.querySelector('input');
-                            if (inp) {
-                                inp.focus();
-                                inp.select();
-                            }
-                        }
-                    }
-                }, 20);
-                return true;
-            }
-            return false;
-        }
-
-        // Глобальный обработчик Enter на всю таблицу (делегирование)
-        function setupGlobalEnterHandler() {
-            document.getElementById('mainTable').addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' || e.keyCode === 13) {
-                    let target = e.target;
-                    if (target && target.tagName === 'INPUT') {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        // Находим строку и столбец, в которых находится этот input
-                        let td = target.closest('td');
-                        if (!td) return;
-                        let tr = td.closest('tr');
-                        if (!tr) return;
-                        let rowIndex = Array.from(tbody.children).indexOf(tr);
-                        if (rowIndex === -1) return;
-                        let colIndex = Array.from(tr.cells).indexOf(td);
-                        if (colIndex === -1 || colIndex > 2) return; // только первые три столбца
-                        moveFocusDown(rowIndex, colIndex);
-                    }
-                }
-            });
+            }, 20);
         }
 
         function renderTable() {
@@ -511,6 +511,7 @@
                     });
                     td.appendChild(wrapper);
                     tr.appendChild(td);
+                    attachEnterToInput(input, i, c);
                 }
                 let tdDel = document.createElement('td');
                 let delBtn = document.createElement('button');
@@ -543,6 +544,7 @@
             localStorage.setItem(STORAGE.palletCount, palletCountInput.value);
             localStorage.setItem(STORAGE.pcsPerPallet, pcsPerPalletInput.value);
             localStorage.setItem(STORAGE.packageCount, packageCountInput.value);
+            // weightPerUnitInput хранит всегда кг (число)
             localStorage.setItem(STORAGE.weightPerUnit, weightPerUnitInput.value);
             localStorage.setItem(STORAGE.rowsData, JSON.stringify(rowsData));
             localStorage.setItem(STORAGE.unit, currentUnit);
@@ -555,8 +557,8 @@
             if (pcs !== null) pcsPerPalletInput.value = pcs;
             let pack = localStorage.getItem(STORAGE.packageCount);
             if (pack !== null) packageCountInput.value = pack;
-            let kg = localStorage.getItem(STORAGE.weightPerUnit);
-            if (kg !== null) weightPerUnitInput.value = kg;
+            let kgPerUnit = localStorage.getItem(STORAGE.weightPerUnit);
+            if (kgPerUnit !== null) weightPerUnitInput.value = kgPerUnit;
             let savedRows = localStorage.getItem(STORAGE.rowsData);
             if (savedRows) {
                 try {
@@ -619,12 +621,48 @@
             alert(msg);
         }
 
+        // Обработка поля "Кг/упаковка" с учётом единиц
+        function setupWeightPerUnitField() {
+            // Функция обновления отображения поля в зависимости от currentUnit
+            function updateWeightFieldDisplay() {
+                let currentKg = parseNum(weightPerUnitInput.value);
+                weightPerUnitInput.value = kgToDisplayWeight(currentKg);
+            }
+            // Обработчик ввода
+            weightPerUnitInput.addEventListener('focus', (e) => e.target.select());
+            weightPerUnitInput.addEventListener('input', () => {
+                let raw = weightPerUnitInput.value;
+                if (raw === '') raw = '0';
+                let num = parseFloat(raw);
+                if (isNaN(num)) num = 0;
+                let kgValue = displayToKgWeight(num);
+                weightPerUnitInput.value = kgToDisplayWeight(kgValue);
+                updateTotalWeightDisplay();
+                updateFooter();
+                saveAll();
+            });
+            // Крестик для очистки
+            let wrapper = document.getElementById('weightPerUnitWrapper');
+            let clearSpan = wrapper.querySelector('.clear-icon');
+            if (clearSpan) {
+                clearSpan.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    weightPerUnitInput.value = kgToDisplayWeight(0);
+                    updateTotalWeightDisplay();
+                    updateFooter();
+                    saveAll();
+                    weightPerUnitInput.focus();
+                });
+            }
+            // При смене единиц обновить отображение поля
+            return updateWeightFieldDisplay;
+        }
+
         function attachTopFieldHandlers() {
             const topConfig = [
                 { el: palletCountInput, onChange: () => { updateTotalPcs(); saveAll(); } },
                 { el: pcsPerPalletInput, onChange: () => { updateTotalPcs(); saveAll(); } },
-                { el: packageCountInput, onChange: () => { updateTotalWeightDisplay(); updateFooter(); saveAll(); } },
-                { el: weightPerUnitInput, onChange: () => { updateTotalWeightDisplay(); updateFooter(); saveAll(); } }
+                { el: packageCountInput, onChange: () => { updateTotalWeightDisplay(); updateFooter(); saveAll(); } }
             ];
             for (let cfg of topConfig) {
                 let inp = cfg.el;
@@ -652,10 +690,15 @@
             }
         }
 
+        let updateWeightFieldDisplay = setupWeightPerUnitField();
+
         function onUnitChange() {
             let newUnit = document.querySelector('input[name="unit"]:checked').value;
             if (newUnit === currentUnit) return;
             currentUnit = newUnit;
+            // Обновить отображение поля веса упаковки
+            updateWeightFieldDisplay();
+            // Перерисовать таблицу с новыми единицами
             renderTable();
             saveAll();
         }
@@ -667,7 +710,7 @@
             updateTotalWeightDisplay();
             updateFooter();
             attachTopFieldHandlers();
-            setupGlobalEnterHandler(); // глобальный перехват Enter на таблице
+            updateWeightFieldDisplay(); // синхронизация отображения поля веса
             addRowBtn.addEventListener('click', () => addRow());
             completeBtn.addEventListener('click', completeReceipt);
             resetBtn.addEventListener('click', resetAll);
